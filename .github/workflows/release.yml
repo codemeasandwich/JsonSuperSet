@@ -1,0 +1,100 @@
+name: Release to npm
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm run test:coverage:check
+
+      - name: Build bundles
+        run: npm run build
+
+      - name: Verify build outputs
+        run: |
+          echo "Checking build outputs..."
+          ls -la dist/
+
+          for file in jss.min.js jss.min.js.map jss.esm.js jss.esm.js.map jss.cjs.js jss.cjs.js.map; do
+            if [ ! -f "dist/$file" ]; then
+              echo "ERROR: Missing dist/$file"
+              exit 1
+            fi
+          done
+
+          echo "All build outputs verified!"
+
+      - name: Publish to npm
+        run: npm publish --provenance --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Get previous tag
+        id: prev_tag
+        run: |
+          PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
+          echo "tag=$PREV_TAG" >> $GITHUB_OUTPUT
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          CURRENT_TAG="${GITHUB_REF_NAME}"
+          PREV_TAG="${{ steps.prev_tag.outputs.tag }}"
+
+          echo "Current tag: $CURRENT_TAG"
+          echo "Previous tag: $PREV_TAG"
+
+          if [ -n "$PREV_TAG" ]; then
+            COMMITS=$(git log ${PREV_TAG}..${CURRENT_TAG} --pretty=format:"- %s" --no-merges)
+          else
+            COMMITS=$(git log --pretty=format:"- %s" --no-merges)
+          fi
+
+          # Write to file for multi-line handling
+          echo "## What's Changed" > release_notes.md
+          echo "" >> release_notes.md
+          echo "$COMMITS" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "---" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "**Full Changelog**: https://github.com/${{ github.repository }}/compare/${PREV_TAG}...${CURRENT_TAG}" >> release_notes.md
+
+          cat release_notes.md
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          body_path: release_notes.md
+          files: |
+            dist/jss.min.js
+            dist/jss.min.js.map
+            dist/jss.esm.js
+            dist/jss.esm.js.map
+            dist/jss.cjs.js
+            dist/jss.cjs.js.map
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

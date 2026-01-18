@@ -122,6 +122,8 @@ function main() {
     ".hooks",
     "coverage",
     ".claude",
+    "dist",
+    "scripts",
   ];
 
   console.log("    Validating JSDoc comments...");

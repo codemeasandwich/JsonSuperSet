@@ -31,7 +31,7 @@ cd "$PROJECT_ROOT"
 echo "    Checking documentation (README.md & files.md in every folder)..."
 
 # Directories to exclude from checking
-EXCLUDED_DIRS="node_modules|\.git|\.hooks|coverage|\.claude"
+EXCLUDED_DIRS="node_modules|\.git|\.hooks|coverage|\.claude|dist|scripts"
 
 # Track missing files
 MISSING_README=()

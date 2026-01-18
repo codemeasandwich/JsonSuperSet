@@ -2,9 +2,25 @@
   "name": "jsonsuperset",
   "version": "1.0.0",
   "description": "Extended JSON serialization supporting RegExp, Date, Error, undefined, Map, Set, and circular references",
-  "main": "index.js",
+  "main": "dist/jss.cjs.js",
+  "module": "dist/jss.esm.js",
+  "browser": "dist/jss.min.js",
   "types": "index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./index.d.ts",
+      "import": "./dist/jss.esm.js",
+      "require": "./dist/jss.cjs.js"
+    }
+  },
+  "files": [
+    "dist/",
+    "index.d.ts"
+  ],
   "scripts": {
+    "build": "node scripts/build.js",
+    "prebuild": "rm -rf dist && mkdir -p dist",
+    "release": "node scripts/release.js",
     "test": "jest",
     "test:coverage": "jest --coverage",
     "test:coverage:check": "jest --coverage --coverageThreshold='{\"global\":{\"branches\":100,\"functions\":100,\"lines\":100,\"statements\":100}}'",
@@ -37,6 +53,7 @@
   "homepage": "https://github.com/codemeasandwich/JsonSuperSet#readme",
   "license": "ISC",
   "devDependencies": {
+    "esbuild": "^0.24.0",
     "jest": "^30.2.0"
   }
 }
