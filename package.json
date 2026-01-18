@@ -1,0 +1,42 @@
+{
+  "name": "jsonsuperset",
+  "version": "1.0.0",
+  "description": "Extended JSON serialization supporting RegExp, Date, Error, undefined, Map, Set, and circular references",
+  "main": "index.js",
+  "types": "index.d.ts",
+  "scripts": {
+    "test": "jest",
+    "test:coverage": "jest --coverage",
+    "test:coverage:check": "jest --coverage --coverageThreshold='{\"global\":{\"branches\":100,\"functions\":100,\"lines\":100,\"statements\":100}}'",
+    "validate:jsdoc": "node .hooks/pre-commit.d/jsdoc-validator.js",
+    "validate:types": "node .hooks/pre-commit.d/check-typescript.js",
+    "validate:docs": "bash .hooks/pre-commit.d/check-docs.sh",
+    "validate:yoda": "node .hooks/pre-commit.d/yoda-validator.js",
+    "validate:all": "npm run validate:docs && npm run validate:jsdoc && npm run validate:types && npm run validate:yoda && npm run test:coverage:check",
+    "hooks:install": "cp .hooks/pre-commit .git/hooks/ && cp .hooks/commit-msg .git/hooks/ && cp -r .hooks/pre-commit.d .git/hooks/ && chmod +x .git/hooks/pre-commit .git/hooks/commit-msg .git/hooks/pre-commit.d/*.sh",
+    "prepare": "npm run hooks:install"
+  },
+  "keywords": [
+    "json",
+    "serialize",
+    "date",
+    "regexp",
+    "error",
+    "map",
+    "set",
+    "circular"
+  ],
+  "author": "Brian Shannon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/codemeasandwich/JsonSuperSet.git"
+  },
+  "bugs": {
+    "url": "https://github.com/codemeasandwich/JsonSuperSet/issues"
+  },
+  "homepage": "https://github.com/codemeasandwich/JsonSuperSet#readme",
+  "license": "ISC",
+  "devDependencies": {
+    "jest": "^30.2.0"
+  }
+}

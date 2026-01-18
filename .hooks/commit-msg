@@ -1,0 +1,185 @@
+#!/usr/bin/env bash
+#
+# Commit message validator for JsonSuperSet
+#
+# Enforces:
+#   1. Conventional Commits format: <type>: <message>
+#   2. First line max 80 characters
+#   3. Multi-line required with list of changes
+#   4. List items can be grouped under headers
+#
+# Format:
+#   <type>: <summary>
+#
+#   - item 1
+#   - item 2
+#
+#   Header:
+#   - grouped item 1
+#   - grouped item 2
+#
+# Allowed types:
+#   bug, fix, feat, docs, style, refactor, perf, test, build, ci, chore
+#
+# Exit codes:
+#   0 - Commit message is valid
+#   1 - Commit message is invalid
+
+MSG_FILE="$1"
+
+# Read the entire commit message
+MSG_CONTENT=$(cat "$MSG_FILE")
+
+# Read first line of commit message
+FIRST_LINE=$(echo "$MSG_CONTENT" | sed -n '1p' | tr -d '\r')
+
+# Skip merge commits
+if printf '%s\n' "$FIRST_LINE" | grep -Eq "^Merge "; then
+    exit 0
+fi
+
+# Allowed types (Conventional Commits + bug)
+TYPES="bug|fix|feat|docs|style|refactor|perf|test|build|ci|chore"
+
+# Check format: type: message (with optional ! for breaking changes)
+if ! printf '%s\n' "$FIRST_LINE" | grep -Eq "^(${TYPES})(!)?:[[:space:]]+[^[:space:]]"; then
+    cat >&2 <<'ERR'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✗ Invalid Commit Message Format
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Commit messages must follow Conventional Commits format:
+
+    <type>: <summary>
+
+Allowed types:
+    bug      - Bug report or fix for a bug
+    fix      - A bug fix
+    feat     - A new feature
+    docs     - Documentation only changes
+    style    - Code style changes (formatting, etc)
+    refactor - Code refactoring
+    perf     - Performance improvements
+    test     - Adding or updating tests
+    build    - Build system changes
+    ci       - CI/CD changes
+    chore    - Other changes (deps, configs, etc)
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ERR
+    exit 1
+fi
+
+# Enforce max line length on first line only (80 characters)
+LENGTH=${#FIRST_LINE}
+if [ "$LENGTH" -gt 80 ]; then
+    cat >&2 <<ERR
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✗ First Line Too Long
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+First line is ${LENGTH} characters (maximum is 80).
+
+Keep the summary line concise. Details go in the body.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ERR
+    exit 1
+fi
+
+# Check for multi-line commit message
+# Count total lines (excluding trailing empty lines)
+TOTAL_LINES=$(echo "$MSG_CONTENT" | sed -e :a -e '/^\n*$/{$d;N;ba' -e '}' | wc -l | tr -d ' ')
+
+if [ "$TOTAL_LINES" -lt 3 ]; then
+    cat >&2 <<'ERR'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✗ Missing Commit Body
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Commits must be multi-line with a list of changes.
+
+Format:
+    <type>: <summary>
+
+    - change 1
+    - change 2
+
+Or grouped under headers:
+    <type>: <summary>
+
+    Files:
+    - updated index.js
+    - added utils/helper.js
+
+    Tests:
+    - added unit tests for helper
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ERR
+    exit 1
+fi
+
+# Check that second line is blank (proper format)
+SECOND_LINE=$(echo "$MSG_CONTENT" | sed -n '2p' | tr -d '\r')
+if [ -n "$SECOND_LINE" ]; then
+    cat >&2 <<'ERR'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✗ Missing Blank Line
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+The second line must be blank. Add a blank line between
+the summary and the body.
+
+Format:
+    <type>: <summary>
+                          <-- blank line here
+    - change 1
+    - change 2
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ERR
+    exit 1
+fi
+
+# Check for list items (lines starting with - or * or numbered)
+# Get body (everything after blank line)
+BODY=$(echo "$MSG_CONTENT" | tail -n +3)
+
+# Check if body contains at least one list item
+# List items: "- item", "* item", "1. item", "1) item", or lines ending with ":"
+if ! echo "$BODY" | grep -Eq "^[[:space:]]*([-*]|[0-9]+[.)])[[:space:]]+" && \
+   ! echo "$BODY" | grep -Eq "^[[:space:]]*[^[:space:]].*:[[:space:]]*$"; then
+    cat >&2 <<'ERR'
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  ✗ Missing List of Changes
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Commit body must include a list of changes.
+
+Use dashes, asterisks, or numbers:
+    - change 1
+    - change 2
+
+    * change 1
+    * change 2
+
+    1. change 1
+    2. change 2
+
+Or group under headers:
+    Files:
+    - index.js
+    - utils/decode.js
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ERR
+    exit 1
+fi
+
+exit 0
