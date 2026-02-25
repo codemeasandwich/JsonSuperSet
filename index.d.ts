@@ -12,3 +12,13 @@ export function encode(obj: any): object;
 export function decode(data: object): any;
 export function custom(tag: string, config: PluginConfig): void;
 export function clearPlugins(): void;
+
+declare const jss: {
+  stringify: typeof stringify;
+  parse: typeof parse;
+  encode: typeof encode;
+  decode: typeof decode;
+  custom: typeof custom;
+  clearPlugins: typeof clearPlugins;
+};
+export default jss;

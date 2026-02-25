@@ -30,7 +30,7 @@ jobs:
 
       - name: Verify build outputs
         run: |
-          for file in jss.min.js jss.esm.js jss.cjs.js; do
+          for file in jss.min.js jss.esm.mjs jss.cjs.js; do
             if [ ! -f "dist/$file" ]; then
               echo "ERROR: Missing dist/$file"
               exit 1

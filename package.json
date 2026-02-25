@@ -1,15 +1,15 @@
 {
   "name": "jsonsuperset",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Extended JSON serialization supporting RegExp, Date, Error, undefined, Map, Set, and circular references",
   "main": "dist/jss.cjs.js",
-  "module": "dist/jss.esm.js",
+  "module": "dist/jss.esm.mjs",
   "browser": "dist/jss.min.js",
   "types": "index.d.ts",
   "exports": {
     ".": {
       "types": "./index.d.ts",
-      "import": "./dist/jss.esm.js",
+      "import": "./dist/jss.esm.mjs",
       "require": "./dist/jss.cjs.js"
     }
   },

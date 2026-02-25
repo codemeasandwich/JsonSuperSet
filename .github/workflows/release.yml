@@ -39,7 +39,7 @@ jobs:
           echo "Checking build outputs..."
           ls -la dist/
 
-          for file in jss.min.js jss.min.js.map jss.esm.js jss.esm.js.map jss.cjs.js jss.cjs.js.map; do
+          for file in jss.min.js jss.min.js.map jss.esm.mjs jss.esm.mjs.map jss.cjs.js jss.cjs.js.map; do
             if [ ! -f "dist/$file" ]; then
               echo "ERROR: Missing dist/$file"
               exit 1
@@ -92,8 +92,8 @@ jobs:
           files: |
             dist/jss.min.js
             dist/jss.min.js.map
-            dist/jss.esm.js
-            dist/jss.esm.js.map
+            dist/jss.esm.mjs
+            dist/jss.esm.mjs.map
             dist/jss.cjs.js
             dist/jss.cjs.js.map
         env:

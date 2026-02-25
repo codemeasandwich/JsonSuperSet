@@ -4,11 +4,12 @@
  *
  * Produces three output bundles:
  * - dist/jss.min.js (IIFE for browser <script> tags, global JSS)
- * - dist/jss.esm.js (ESM for modern bundlers)
+ * - dist/jss.esm.mjs (ESM for modern bundlers)
  * - dist/jss.cjs.js (CommonJS for Node.js)
  */
 
 const esbuild = require('esbuild');
+const fs = require('fs');
 const path = require('path');
 
 const entryPoint = path.resolve(__dirname, '../index.js');
@@ -39,12 +40,27 @@ async function build() {
     minify: true,
     sourcemap: true,
     format: 'esm',
-    outfile: path.join(outdir, 'jss.esm.js'),
+    outfile: path.join(outdir, 'jss.esm.mjs'),
     target: ['es2018'],
     platform: 'neutral',
   });
-  console.log('  Created dist/jss.esm.js (ESM)');
-  console.log('  Created dist/jss.esm.js.map');
+
+  // Post-process: add named exports alongside default export
+  const esmPath = path.join(outdir, 'jss.esm.mjs');
+  let esmContent = fs.readFileSync(esmPath, 'utf8');
+  const match = esmContent.match(/export default (\w+)\(\);/);
+  if (!match) {
+    throw new Error('ESM bundle: could not find "export default <var>();" pattern');
+  }
+  const varName = match[1];
+  esmContent = esmContent.replace(
+    /export default \w+\(\);/,
+    `var _jss=${varName}();export default _jss;export var{parse,stringify,encode,decode,custom,clearPlugins}=_jss;`
+  );
+  fs.writeFileSync(esmPath, esmContent);
+
+  console.log('  Created dist/jss.esm.mjs (ESM)');
+  console.log('  Created dist/jss.esm.mjs.map');
 
   // CommonJS bundle for Node.js
   await esbuild.build({
